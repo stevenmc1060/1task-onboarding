@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Azure Static Web Apps
+.azure/
