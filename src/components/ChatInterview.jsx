@@ -110,9 +110,43 @@ const ChatInterview = ({ userData, onComplete }) => {
       setMessages(prev => [...prev, errorMessage]);
     }, 30000); // 30 second timeout
 
-    // Add to conversation history
+    // Detect what type of question the user is responding to based on the last assistant message
+    const lastAssistantMessage = messages[messages.length - 1]?.content || '';
+    let questionType = 'general';
+    let questionNumber = null;
+    
+    // More comprehensive pattern matching for question types
+    if (/big goals.*this year|yearly.*goals|goals.*year|Question 1|goals.*annual/i.test(lastAssistantMessage)) {
+      questionType = 'yearly_goals';
+      questionNumber = 1;
+    } else if (/next 3 months|quarterly.*goals|3-month.*goals|Question 2|next quarter|specific goals.*focus/i.test(lastAssistantMessage)) {
+      questionType = 'quarterly_goals'; 
+      questionNumber = 2;
+    } else if (/habits|routines.*build|maintain.*routine|Question 3|daily.*routine|weekly.*routine|habits.*want/i.test(lastAssistantMessage)) {
+      questionType = 'habits';
+      questionNumber = 3;
+    } else if (/projects|initiatives.*working|Question 4|specific projects|working on.*projects/i.test(lastAssistantMessage)) {
+      questionType = 'projects';
+      questionNumber = 4;
+    }
+    
+    // Also detect life area selection
+    if (/which.*areas.*focus|life areas|areas.*like.*focus|start with/i.test(lastAssistantMessage)) {
+      questionType = 'life_area_selection';
+    }
+
+    console.log(`🔍 QUESTION DETECTION: Last assistant message: "${lastAssistantMessage.substring(0, 100)}..."`);
+    console.log(`🔍 QUESTION DETECTION: Detected type: ${questionType}, number: ${questionNumber}`);
+
+    // Add to conversation history with question context
     const newHistory = [...conversationHistory, 
-      { role: 'user', content: currentInput }
+      { 
+        role: 'user', 
+        content: currentInput,
+        question_type: questionType,
+        question_number: questionNumber,
+        timestamp: new Date().toISOString()
+      }
     ];
     setConversationHistory(newHistory);
 
@@ -145,9 +179,13 @@ const ChatInterview = ({ userData, onComplete }) => {
 
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Update conversation history
+        // Update conversation history with assistant response and context
         const updatedHistory = [...newHistory, 
-          { role: 'assistant', content: data.response }
+          { 
+            role: 'assistant', 
+            content: data.response,
+            timestamp: new Date().toISOString()
+          }
         ];
         setConversationHistory(updatedHistory);
 
@@ -324,7 +362,13 @@ const ChatInterview = ({ userData, onComplete }) => {
         interview_data: {
           responses: interviewData.responses,
           final_summary: interviewData.finalSummary,
-          parsed_items: parsedData,
+          parsed_items: {
+            lifeAreas: parsedData.lifeAreas || [],
+            yearlyGoals: parsedData.yearlyGoals || [],
+            quarterlyGoals: parsedData.quarterlyGoals || [],
+            habits: parsedData.habits || [],
+            projects: parsedData.projects || []
+          },
           completed_at: interviewData.completedAt,
           // Add legacy format for compatibility
           life_areas: parsedData.lifeAreas || [],
@@ -466,7 +510,7 @@ const ChatInterview = ({ userData, onComplete }) => {
   };
   
   const parseInterviewData = (interviewData) => {
-    console.log('🔍 PARSING: Starting interview data parsing');
+    console.log('🔍 PARSING: Starting interview data parsing with question context');
     const { responses } = interviewData;
     const lifeAreas = [];
     const yearlyGoals = [];
@@ -474,7 +518,7 @@ const ChatInterview = ({ userData, onComplete }) => {
     const habits = [];
     const projects = [];
     
-    let currentLifeArea = null;
+    let currentLifeArea = 'uncategorized';
     
     responses.forEach((exchange, index) => {
       console.log(`🔍 PARSING: Processing exchange ${index}:`, exchange);
@@ -482,96 +526,67 @@ const ChatInterview = ({ userData, onComplete }) => {
       // Handle both new format (role/content) and old format (user/assistant)
       const userMessage = (exchange.role === 'user' ? exchange.content : exchange.user) || '';
       const assistantMessage = (exchange.role === 'assistant' ? exchange.content : exchange.assistant) || '';
+      const questionType = exchange.question_type;
+      const questionNumber = exchange.question_number;
       
       console.log(`🔍 PARSING: User message: "${userMessage}"`);
-      console.log(`🔍 PARSING: Assistant message: "${assistantMessage}"`);
+      console.log(`🔍 PARSING: Question type: ${questionType}, Question number: ${questionNumber}`);
       
-      // ONLY detect NEW life areas when user explicitly mentions wanting to focus on them
-      // Look for patterns like "I'd like to focus on [area]" or "let's talk about [area]"
-      const newAreaPatterns = [
-        { pattern: /focus on.*health|talk about.*health|health.*to start|health.*next/i, area: 'health_self_care' },
-        { pattern: /focus on.*personal growth|talk about.*personal growth|personal growth.*next/i, area: 'personal_growth' },
-        { pattern: /focus on.*professional|focus on.*work|talk about.*work|work.*next/i, area: 'professional' },
-        { pattern: /focus on.*family|focus on.*relationship|talk about.*relationship/i, area: 'family_relationships' },
-        { pattern: /focus on.*financ|talk about.*financ|money.*next/i, area: 'finances' },
-        { pattern: /focus on.*community|talk about.*community/i, area: 'community' }
-      ];
-      
-      // Check if user is explicitly selecting a NEW life area
-      newAreaPatterns.forEach(({ pattern, area }) => {
-        if (pattern.test(userMessage) && !lifeAreas.includes(area)) {
-          console.log(`✅ PARSING: User explicitly chose new life area "${area}"`);
-          lifeAreas.push(area);
-          currentLifeArea = area;
-        }
-      });
-      
-      // ALSO determine current context from assistant's question
-      // This helps when parsing responses - what area is the assistant asking about?
-      let questionContext = currentLifeArea; // Default to current area
-      
-      if (assistantMessage) {
-        if (/\*\*Health\*\*|for.*Health|Health.*goals/i.test(assistantMessage)) {
-          questionContext = 'health_self_care';
-        } else if (/\*\*Personal Growth\*\*|for.*Personal Growth|Personal Growth.*goals/i.test(assistantMessage)) {
-          questionContext = 'personal_growth';
-        } else if (/\*\*Professional\*\*|for.*Professional|work.*goals/i.test(assistantMessage)) {
-          questionContext = 'professional';
-        } else if (/\*\*Family\*\*|\*\*Relationship\*\*|relationship.*goals/i.test(assistantMessage)) {
-          questionContext = 'family_relationships';
-        } else if (/\*\*Financ|\*\*Money|financial.*goals/i.test(assistantMessage)) {
-          questionContext = 'finances';
-        } else if (/\*\*Community\*\*|community.*goals/i.test(assistantMessage)) {
-          questionContext = 'community';
-        }
+      // Detect life area selection from user messages
+      if (userMessage && exchange.role === 'user') {
+        const newAreaPatterns = [
+          { pattern: /focus on.*health|talk about.*health|health.*to start|health.*next/i, area: 'health_self_care' },
+          { pattern: /focus on.*personal growth|talk about.*personal growth|personal growth.*next/i, area: 'personal_growth' },
+          { pattern: /focus on.*professional|focus on.*work|talk about.*work|work.*next/i, area: 'professional' },
+          { pattern: /focus on.*family|focus on.*relationship|talk about.*relationship/i, area: 'family_relationships' },
+          { pattern: /focus on.*financ|talk about.*financ|money.*next/i, area: 'finances' },
+          { pattern: /focus on.*community|talk about.*community/i, area: 'community' }
+        ];
+        
+        newAreaPatterns.forEach(({ pattern, area }) => {
+          if (pattern.test(userMessage) && !lifeAreas.includes(area)) {
+            console.log(`✅ PARSING: User selected life area "${area}"`);
+            lifeAreas.push(area);
+            currentLifeArea = area;
+          }
+        });
       }
       
-      // Check what type of question the assistant is asking in current message
-      const isYearlyGoalsQuestion = /big goals.*this year|yearly.*goals|goals.*year/i.test(assistantMessage);
-      const isQuarterlyGoalsQuestion = /next 3 months|quarterly.*goals|3-month.*goals/i.test(assistantMessage);
-      const isHabitsQuestion = /habits|routines.*build|maintain.*routine/i.test(assistantMessage);
-      const isProjectsQuestion = /projects|initiatives.*working/i.test(assistantMessage);
-      
-      // For user responses, check the PREVIOUS assistant message to see what type of question was asked
-      let prevAssistantMessage = '';
-      if (userMessage && index > 0) {
-        const prevExchange = responses[index - 1];
-        prevAssistantMessage = (prevExchange.role === 'assistant' ? prevExchange.content : prevExchange.assistant) || '';
-      }
-      
-      const prevIsYearlyGoalsQuestion = /big goals.*this year|yearly.*goals|goals.*year/i.test(prevAssistantMessage);
-      const prevIsQuarterlyGoalsQuestion = /next 3 months|quarterly.*goals|3-month.*goals/i.test(prevAssistantMessage);
-      const prevIsHabitsQuestion = /habits|routines.*build|maintain.*routine/i.test(prevAssistantMessage);
-      const prevIsProjectsQuestion = /projects|initiatives.*working/i.test(prevAssistantMessage);
-      
-      console.log(`🔍 PARSING: Question types - Yearly: ${isYearlyGoalsQuestion}, Quarterly: ${isQuarterlyGoalsQuestion}, Habits: ${isHabitsQuestion}, Projects: ${isProjectsQuestion}`);
-      console.log(`🔍 PARSING: Previous question types - Yearly: ${prevIsYearlyGoalsQuestion}, Quarterly: ${prevIsQuarterlyGoalsQuestion}, Habits: ${prevIsHabitsQuestion}, Projects: ${prevIsProjectsQuestion}`);
-      console.log(`🔍 PARSING: Question context area: ${questionContext}`);
-      console.log(`🔍 PARSING: Current life area: ${currentLifeArea}`);
-      
-      // Parse user responses based on the PREVIOUS assistant's question
-      const contextArea = questionContext || currentLifeArea;
-      
-      // Skip parsing if user is requesting to finish/complete the interview
-      const isCompletionRequest = /finish|complete|covers everything|final summary|that's all|i'm done/i.test(userMessage);
-      
-      if (userMessage && contextArea && userMessage.length > 3 && !isCompletionRequest) {
-        if (prevIsYearlyGoalsQuestion) {
-          const goals = parseGoalsFromText(userMessage);
-          console.log(`✅ PARSING: Found ${goals.length} yearly goals for ${contextArea}:`, goals);
-          goals.forEach(goal => yearlyGoals.push({ ...goal, lifeArea: contextArea }));
-        } else if (prevIsQuarterlyGoalsQuestion) {
-          const goals = parseGoalsFromText(userMessage);
-          console.log(`✅ PARSING: Found ${goals.length} quarterly goals for ${contextArea}:`, goals);
-          goals.forEach(goal => quarterlyGoals.push({ ...goal, lifeArea: contextArea }));
-        } else if (prevIsHabitsQuestion) {
-          const parsedHabits = parseHabitsFromText(userMessage);
-          console.log(`✅ PARSING: Found ${parsedHabits.length} habits for ${contextArea}:`, parsedHabits);
-          parsedHabits.forEach(habit => habits.push({ ...habit, lifeArea: contextArea }));
-        } else if (prevIsProjectsQuestion) {
-          const parsedProjects = parseProjectsFromText(userMessage);
-          console.log(`✅ PARSING: Found ${parsedProjects.length} projects for ${contextArea}:`, parsedProjects);
-          parsedProjects.forEach(project => projects.push({ ...project, lifeArea: contextArea }));
+      // Parse responses based on the SAVED question context (much more reliable!)
+      if (userMessage && questionType && userMessage.length > 3) {
+        const isCompletionRequest = /finish|complete|covers everything|final summary|that's all|i'm done/i.test(userMessage);
+        
+        if (!isCompletionRequest) {
+          console.log(`✅ PARSING: Using saved question context - Type: ${questionType}, Area: ${currentLifeArea}`);
+          
+          switch (questionType) {
+            case 'yearly_goals':
+              const yearlyGoalsList = parseGoalsFromText(userMessage);
+              console.log(`✅ PARSING: Found ${yearlyGoalsList.length} yearly goals:`, yearlyGoalsList);
+              yearlyGoalsList.forEach(goal => yearlyGoals.push({ ...goal, lifeArea: currentLifeArea }));
+              break;
+              
+            case 'quarterly_goals':
+              const quarterlyGoalsList = parseGoalsFromText(userMessage);
+              console.log(`✅ PARSING: Found ${quarterlyGoalsList.length} quarterly goals:`, quarterlyGoalsList);
+              quarterlyGoalsList.forEach(goal => quarterlyGoals.push({ ...goal, lifeArea: currentLifeArea }));
+              break;
+              
+            case 'habits':
+              const habitsList = parseHabitsFromText(userMessage);
+              console.log(`✅ PARSING: Found ${habitsList.length} habits:`, habitsList);
+              habitsList.forEach(habit => habits.push({ ...habit, lifeArea: currentLifeArea }));
+              break;
+              
+            case 'projects':
+              const projectsList = parseProjectsFromText(userMessage);
+              console.log(`✅ PARSING: Found ${projectsList.length} projects:`, projectsList);
+              projectsList.forEach(project => projects.push({ ...project, lifeArea: currentLifeArea }));
+              break;
+              
+            default:
+              console.log(`⚠️ PARSING: Unknown question type: ${questionType}`);
+          }
         }
       }
     });
@@ -584,7 +599,7 @@ const ChatInterview = ({ userData, onComplete }) => {
       projects
     };
     
-    console.log('🎯 PARSING: Final parsed result:', result);
+    console.log('🎯 PARSING: Final parsed result using question context:', result);
     return result;
   };
   

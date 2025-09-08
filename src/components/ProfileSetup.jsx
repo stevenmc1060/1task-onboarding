@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMsal } from '@azure/msal-react';
-import { accountTypes } from '../config';
+import { accountTypes, apiConfig } from '../config';
 
 const ProfileSetup = ({ onComplete }) => {
   const { accounts, instance } = useMsal();
@@ -46,6 +46,117 @@ const ProfileSetup = ({ onComplete }) => {
     }
   };
 
+  const handleResetOnboardingData = async () => {
+    if (!confirm('⚠️ This will reset all your onboarding data and you\'ll start over. Continue?')) {
+      return;
+    }
+
+    const userId = account?.localAccountId;
+    if (!userId) {
+      alert('No user found');
+      return;
+    }
+
+    // Force use of Azure backend for reset (ignore localhost env vars during development)
+    const AZURE_BACKEND_URL = "https://1task-backend-api-gse0fsgngtfxhjc6.southcentralus-01.azurewebsites.net/api";
+
+    try {
+      console.log(`🔄 Starting reset for user: ${userId}`);
+      console.log(`🔗 Backend URL: ${AZURE_BACKEND_URL}`);
+
+      // 1. Reset interview data and onboarding status
+      console.log('1️⃣ Resetting profile data...');
+      const profilePayload = {
+        onboarding_completed: false,
+        interview_data: null,
+        first_run: true
+      };
+      console.log('Profile payload:', profilePayload);
+      
+      const interviewResponse = await fetch(`${AZURE_BACKEND_URL}/profiles/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profilePayload)
+      });
+
+      console.log('Profile response status:', interviewResponse.status);
+      if (interviewResponse.ok) {
+        console.log('✅ Profile reset successful');
+      } else {
+        const errorText = await interviewResponse.text();
+        console.error('❌ Profile reset failed:', errorText);
+      }
+
+      // 2. Reset onboarding status completely
+      console.log('2️⃣ Resetting onboarding status completely...');
+      const onboardingPayload = {
+        current_step: 'welcome',
+        completed_steps: [],
+        is_completed: false,
+        completed_at: null,
+        welcome_shown: false,
+        interview_responses: null
+      };
+      console.log('Onboarding payload:', onboardingPayload);
+      
+      const onboardingResponse = await fetch(`${AZURE_BACKEND_URL}/onboarding/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(onboardingPayload)
+      });
+
+      console.log('Onboarding response status:', onboardingResponse.status);
+      if (onboardingResponse.ok) {
+        console.log('✅ Onboarding status reset successful');
+      } else {
+        const errorText = await onboardingResponse.text();
+        console.error('❌ Onboarding status reset failed:', errorText);
+      }
+
+      // 3. Clean up user items (optional)
+      console.log('3️⃣ Cleaning up user items...');
+      const endpoints = ['yearly-goals', 'quarterly-goals', 'habits', 'projects'];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Deleting ${endpoint}...`);
+          const deleteResponse = await fetch(`${AZURE_BACKEND_URL}/${endpoint}?user_id=${userId}`, {
+            method: 'DELETE'
+          });
+          
+          console.log(`${endpoint} delete response:`, deleteResponse.status);
+          if (deleteResponse.ok) {
+            console.log(`✅ Deleted ${endpoint} successfully`);
+          } else {
+            console.log(`⚠️ No ${endpoint} found (this is normal)`);
+          }
+        } catch (error) {
+          console.log(`⚠️ Could not delete ${endpoint}:`, error.message);
+        }
+      }
+
+      // 4. Clear any local storage data
+      console.log('4️⃣ Clearing local storage...');
+      localStorage.removeItem('onboarding_insights');
+      localStorage.removeItem('user_authenticated');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('msal_account_hint');
+      console.log('✅ Local storage cleared');
+
+      console.log('🎉 Reset complete!');
+      alert('✅ Onboarding data reset successfully! Refreshing page...');
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('💥 Error resetting onboarding data:', error);
+      alert(`❌ Failed to reset onboarding data: ${error.message}`);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
@@ -55,12 +166,23 @@ const ProfileSetup = ({ onComplete }) => {
             <h1 className="text-3xl font-bold text-gray-900">Set Up Your Profile</h1>
             <p className="mt-2 text-gray-600">Tell us about yourself to personalize your experience</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            Logout
-          </button>
+          <div className="flex flex-col space-y-2">
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Logout
+            </button>
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={handleResetOnboardingData}
+                className="px-4 py-2 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
+                title="Development only: Reset all onboarding data"
+              >
+                🔄 Reset Data
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
