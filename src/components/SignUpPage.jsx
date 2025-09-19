@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMsal } from '@azure/msal-react';
 import { personalAccountLoginRequest, workSchoolAccountLoginRequest } from '../config';
+import logoImage from '../assets/logo.png';
 
 const SignUpPage = ({ onComplete }) => {
   const { instance, inProgress, accounts } = useMsal();
@@ -51,10 +52,20 @@ const SignUpPage = ({ onComplete }) => {
         <div className="text-center">
           <div className="mx-auto h-16 w-16 mb-4">
             <img 
-              src="/logo.png" 
+              src={logoImage}
               alt="OneTaskAssistant Logo" 
               className="h-full w-full object-contain"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
             />
+            <div 
+              className="h-full w-full bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+              style={{ display: 'none' }}
+            >
+              OTA
+            </div>
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Welcome to OneTaskAssistant

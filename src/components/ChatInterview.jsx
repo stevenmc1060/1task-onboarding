@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { apiConfig } from '../config';
+import logoImage from '../assets/logo.png';
 
 const ChatInterview = ({ userData, onComplete }) => {
   const { accounts } = useMsal();
@@ -774,10 +775,20 @@ const ChatInterview = ({ userData, onComplete }) => {
       <div className="text-center mb-6">
         <div className="flex justify-center mb-4">
           <img 
-            src="/logo.png" 
+            src={logoImage}
             alt="OneTaskAssistant Logo" 
             className="h-12 w-12 object-contain"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
           />
+          <div 
+            className="h-12 w-12 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+            style={{ display: 'none' }}
+          >
+            OTA
+          </div>
         </div>
         <h1 className="text-3xl font-bold text-gray-900">Let's Personalize Your Experience</h1>
         <p className="mt-2 text-gray-600">

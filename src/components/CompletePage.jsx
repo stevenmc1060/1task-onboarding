@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
+import logoImage from '../assets/logo.png';
 
 const CompletePage = ({ userData }) => {
   const { accounts } = useMsal();
@@ -138,10 +139,20 @@ const CompletePage = ({ userData }) => {
       <div className="mb-8">
         <div className="mx-auto w-16 h-16 mb-4">
           <img 
-            src="/logo.png" 
+            src={logoImage}
             alt="OneTaskAssistant Logo" 
             className="h-full w-full object-contain"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
           />
+          <div 
+            className="h-full w-full bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+            style={{ display: 'none' }}
+          >
+            OTA
+          </div>
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Welcome to OneTaskAssistant!
