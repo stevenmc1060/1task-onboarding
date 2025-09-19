@@ -15,10 +15,10 @@ const UsageAgreement = ({ onComplete }) => {
 TERMS OF SERVICE AND PRIVACY POLICY
 
 1. ACCEPTANCE OF TERMS
-By accessing and using 1TaskAssistant ("the Service"), you agree to be bound by these Terms of Service.
+By accessing and using OneTaskAssistant ("the Service"), you agree to be bound by these Terms of Service.
 
 2. DESCRIPTION OF SERVICE
-1TaskAssistant is an AI-powered productivity and task management platform designed to help users organize, prioritize, and complete their tasks more effectively.
+OneTaskAssistant is an AI-powered productivity and task management platform designed to help users organize, prioritize, and complete their tasks more effectively.
 
 3. USER ACCOUNTS
 - You must provide accurate and complete registration information
@@ -39,7 +39,7 @@ You agree not to:
 - Upload malicious content or spam
 
 6. INTELLECTUAL PROPERTY
-- The Service and its content are owned by 1TaskAssistant and protected by copyright
+- The Service and its content are owned by OneTaskAssistant and protected by copyright
 - You retain ownership of content you create using the Service
 - You grant us a license to use your content to provide the Service
 
@@ -107,13 +107,13 @@ Last updated: September 2025
             </label>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div className="flex">
-              <svg className="h-5 w-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="ml-3">
-                <p className="text-sm text-blue-800">
+                <p className="text-sm text-purple-800">
                   <strong>Your Privacy Matters:</strong> We use enterprise-grade encryption to protect your data. 
                   You can export or delete your data at any time from your account settings.
                 </p>

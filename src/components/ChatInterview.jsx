@@ -772,12 +772,19 @@ const ChatInterview = ({ userData, onComplete }) => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-6">
+        <div className="flex justify-center mb-4">
+          <img 
+            src="/logo.png" 
+            alt="OneTaskAssistant Logo" 
+            className="h-12 w-12 object-contain"
+          />
+        </div>
         <h1 className="text-3xl font-bold text-gray-900">Let's Personalize Your Experience</h1>
         <p className="mt-2 text-gray-600">
           A quick chat to understand how you work best
         </p>
         {!interviewComplete && messages.length > 2 && (
-          <p className="mt-2 text-sm text-blue-600 bg-blue-50 rounded-lg px-4 py-2 inline-block">
+          <p className="mt-2 text-sm text-purple-600 bg-purple-50 rounded-lg px-4 py-2 inline-block">
             💡 <strong>Tip:</strong> You can select multiple life areas and I'll ask about each one. 
             Use the buttons below to add more areas or finish when you're ready!
           </p>
@@ -881,7 +888,7 @@ const ChatInterview = ({ userData, onComplete }) => {
                     handleSendMessage();
                   }, 100);
                 }}
-                className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 rounded-full border border-blue-300 transition-colors"
+                className="px-3 py-1 text-sm bg-purple-100 hover:bg-purple-200 rounded-full border border-purple-300 transition-colors"
                 disabled={isLoading}
               >
                 ✅ Finish Interview - Create Final Summary

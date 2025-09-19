@@ -162,7 +162,14 @@ const ProfileSetup = ({ onComplete }) => {
       <div className="text-center mb-8">
         <div className="flex justify-between items-center mb-4">
           <div></div> {/* Spacer for centering */}
-          <div>
+          <div className="flex flex-col items-center">
+            <div className="mb-4">
+              <img 
+                src="/logo.png" 
+                alt="OneTaskAssistant Logo" 
+                className="h-12 w-12 object-contain"
+              />
+            </div>
             <h1 className="text-3xl font-bold text-gray-900">Set Up Your Profile</h1>
             <p className="mt-2 text-gray-600">Tell us about yourself to personalize your experience</p>
           </div>

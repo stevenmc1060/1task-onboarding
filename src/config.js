@@ -1,8 +1,8 @@
-// MSAL configuration - matches main app for seamless transition
+// MSAL configuration - supports both personal and work/school accounts
 export const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_AZURE_CLIENT_ID || "your-client-id-here",
-    authority: import.meta.env.VITE_AZURE_AUTHORITY || "https://login.microsoftonline.com/common",
+    authority: import.meta.env.VITE_AZURE_AUTHORITY || "https://login.microsoftonline.com/common", // Fallback to common
     redirectUri: import.meta.env.VITE_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: import.meta.env.VITE_REDIRECT_URI || window.location.origin,
     navigateToLoginRequestUrl: false, // Prevent redirect loops
@@ -10,13 +10,32 @@ export const msalConfig = {
   cache: {
     cacheLocation: "localStorage", // Shared cache with main app
     storeAuthStateInCookie: true, // Better support for redirect flow
+  },
+  system: {
+    allowNativeBroker: false, // Disable broker for web apps
+    windowHashTimeout: 60000, // Increase timeout for slower auth flows
+    iframeHashTimeout: 6000,
+    loadFrameTimeout: 0,
+    navigateFrameWait: 0
   }
 };
 
-export const loginRequest = {
+// Login requests for different account types
+export const personalAccountLoginRequest = {
   scopes: ["User.Read"],
-  prompt: "select_account" // Forces account selection
+  prompt: "select_account",
+  authority: "https://login.microsoftonline.com/consumers", // Personal accounts only
+  // PKCE is automatically enabled for personal accounts
 };
+
+export const workSchoolAccountLoginRequest = {
+  scopes: ["User.Read"],
+  prompt: "select_account", 
+  authority: "https://login.microsoftonline.com/organizations", // Work/school accounts only
+};
+
+// Legacy login request for backward compatibility
+export const loginRequest = personalAccountLoginRequest;
 
 // API Configuration
 export const apiConfig = {

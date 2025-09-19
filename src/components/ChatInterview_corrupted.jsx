@@ -423,7 +423,7 @@ const ChatInterview = ({ userData, onComplete }) => {
       }
     } else {
       // Fallback for very short conversations
-      structuredData.bio = 'New to 1TaskAssistant - ready to get organized!';
+      structuredData.bio = 'New to OneTaskAssistant - ready to get organized!';
     }
 
     return structuredData;

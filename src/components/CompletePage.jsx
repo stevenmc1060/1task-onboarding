@@ -136,13 +136,15 @@ const CompletePage = ({ userData }) => {
   return (
     <div className="max-w-2xl mx-auto text-center">
       <div className="mb-8">
-        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
+        <div className="mx-auto w-16 h-16 mb-4">
+          <img 
+            src="/logo.png" 
+            alt="OneTaskAssistant Logo" 
+            className="h-full w-full object-contain"
+          />
         </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome to 1TaskAssistant!
+          Welcome to OneTaskAssistant!
         </h1>
         <p className="text-lg text-gray-600">
           Your account has been successfully created and personalized
@@ -189,7 +191,7 @@ const CompletePage = ({ userData }) => {
           {interviewInsights.yearlyGoals.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
-                <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm mr-2">🎯</span>
+                <span className="w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm mr-2">🎯</span>
                 Yearly Goals
               </h3>
               <div className="overflow-x-auto">
@@ -205,7 +207,7 @@ const CompletePage = ({ userData }) => {
                     {interviewInsights.yearlyGoals.map((goal, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             {goal.lifeArea}
                           </span>
                         </td>
@@ -334,8 +336,8 @@ const CompletePage = ({ userData }) => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="text-blue-600 mb-2">
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="text-purple-600 mb-2">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -376,7 +378,7 @@ const CompletePage = ({ userData }) => {
           onClick={handleGetStarted}
           className="w-full btn-primary py-4 text-lg font-medium"
         >
-          Launch 1TaskAssistant
+          Launch OneTaskAssistant
         </button>
         
         <div className="text-center">
@@ -399,7 +401,7 @@ const CompletePage = ({ userData }) => {
           </svg>
           <div className="ml-3">
             <p className="text-sm text-yellow-800">
-              <strong>Private Preview:</strong> You're among the first to experience 1TaskAssistant! 
+              <strong>Private Preview:</strong> You're among the first to experience OneTaskAssistant! 
               Your feedback helps us improve the platform for everyone.
             </p>
           </div>

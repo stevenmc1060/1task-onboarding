@@ -1,6 +1,6 @@
-# 1TaskAssistant Onboarding App
+# OneTaskAssistant Onboarding App
 
-A React/Vite application for user onboarding and account setup for 1TaskAssistant.
+A React/Vite application for user onboarding and account setup for OneTaskAssistant.
 
 ## Features
 
@@ -85,7 +85,7 @@ This app is configured for Azure Static Web Apps deployment with:
 - Uses React Router for navigation between onboarding steps
 - MSAL integration handles authentication state
 - Tailwind CSS for responsive, modern UI
-- Ready for integration with existing 1TaskAssistant backend APIs
+- Ready for integration with existing OneTaskAssistant backend APIs
 - Chat interview component prepared for AI integration
 
 ## Support
