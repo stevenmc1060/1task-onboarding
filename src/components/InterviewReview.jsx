@@ -33,40 +33,78 @@ const InterviewReview = ({ interviewData, onComplete, onBack }) => {
         const userText = response.content.trim();
         if (!userText || userText.length < 3) continue;
         
+        // Filter out navigation/selection responses that aren't actual goals/projects/habits
+        const navigationPhrases = [
+          'let\'s focus on',
+          'focus on',
+          'yes',
+          'no',
+          'sure',
+          'okay',
+          'ok',
+          'next',
+          'continue',
+          'done',
+          'finished',
+          'that\'s all',
+          'nothing else',
+          'skip',
+          'maybe later'
+        ];
+        
+        const isNavigationResponse = navigationPhrases.some(phrase => 
+          userText.toLowerCase().includes(phrase) && userText.length < 60
+        );
+        
+        // Skip navigation responses
+        if (isNavigationResponse) continue;
+        
         // Get context from previous assistant message
         const prevResponse = i > 0 ? responses[i-1] : null;
         const context = prevResponse?.content?.toLowerCase() || '';
         
-        const item = {
-          id: `item_${i}`,
-          text: userText,
-          lifeArea: currentLifeArea,
-          originalIndex: i
-        };
+        // Split comma-separated responses into individual items
+        const individualTexts = userText.includes(',') 
+          ? userText.split(',').map(text => text.trim()).filter(text => text.length > 2)
+          : [userText];
         
-        // Categorize based on context
-        if (context.includes('big goals') || context.includes('yearly') || context.includes('year')) {
-          items.yearlyGoals.push(item);
-        } else if (context.includes('3 months') || context.includes('quarterly') || context.includes('quarter')) {
-          items.quarterlyGoals.push(item);
-        } else if (context.includes('habits') || context.includes('routines') || context.includes('daily')) {
-          // Smart detection: if it sounds like a project, suggest project category
-          if (userText.toLowerCase().includes('build') || userText.toLowerCase().includes('create') || 
-              userText.toLowerCase().includes('develop') || userText.toLowerCase().includes('plan')) {
+        individualTexts.forEach((text, index) => {
+          // Skip individual items that are navigation phrases
+          const isNavText = navigationPhrases.some(phrase => 
+            text.toLowerCase().includes(phrase) && text.length < 60
+          );
+          if (isNavText) return;
+          const item = {
+            id: `item_${i}_${index}`,
+            text: text,
+            lifeArea: currentLifeArea,
+            originalIndex: i
+          };
+          
+          // Categorize based on context
+          if (context.includes('big goals') || context.includes('yearly') || context.includes('year')) {
+            items.yearlyGoals.push(item);
+          } else if (context.includes('3 months') || context.includes('quarterly') || context.includes('quarter')) {
+            items.quarterlyGoals.push(item);
+          } else if (context.includes('habits') || context.includes('routines') || context.includes('daily')) {
+            // Smart detection: if it sounds like a project, suggest project category
+            if (text.toLowerCase().includes('build') || text.toLowerCase().includes('create') || 
+                text.toLowerCase().includes('develop') || text.toLowerCase().includes('plan')) {
+              items.projects.push(item);
+            } else {
+              items.habits.push(item);
+            }
+          } else if (context.includes('projects') || context.includes('initiatives') || context.includes('working on')) {
             items.projects.push(item);
           } else {
-            items.habits.push(item);
+            // Default categorization based on content
+            if (text.toLowerCase().includes('daily') || text.toLowerCase().includes('every day')) {
+              items.habits.push(item);
+            } else {
+              items.projects.push(item);
+            }
           }
-        } else if (context.includes('projects') || context.includes('initiatives') || context.includes('working on')) {
-          items.projects.push(item);
-        } else {
-          // Default categorization based on content
-          if (userText.toLowerCase().includes('daily') || userText.toLowerCase().includes('every day')) {
-            items.habits.push(item);
-          } else {
-            items.projects.push(item);
-          }
-        }
+        });
       }
     }
     
