@@ -114,7 +114,7 @@ const CompletePage = ({ userData }) => {
       const tokenCache = localStorage.getItem(`msal.token.keys.${account.localAccountId}`);
       
       // Create URL with authentication hints
-      const mainAppUrl = new URL('https://polite-field-04b5c2a10-preview.centralus.1.azurestaticapps.net/');
+      const mainAppUrl = new URL('https://app.1taskassistant.com');
       mainAppUrl.searchParams.set('from_onboarding', 'true');
       mainAppUrl.searchParams.set('user_hint', account.username || account.localAccountId);
       
@@ -130,7 +130,7 @@ const CompletePage = ({ userData }) => {
       window.location.href = mainAppUrl.toString();
     } else {
       // Fallback if no account found
-      window.location.href = 'https://polite-field-04b5c2a10-preview.centralus.1.azurestaticapps.net/';
+      window.location.href = 'https://app.1taskassistant.com';
     }
   };
 
