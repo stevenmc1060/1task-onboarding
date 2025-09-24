@@ -12,7 +12,7 @@ const CompletePage = ({ userData }) => {
       if (accounts.length > 0) {
         const userId = accounts[0].localAccountId;
         try {
-          const response = await fetch(`https://1task-backend-api-gse0fsgngtfxhjc6.southcentralus-01.azurewebsites.net/api/profiles/${userId}`);
+          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'https://1task-backend-api-gse0fsgngtfxhjc6.southcentralus-01.azurewebsites.net'}/api/profiles/${userId}`);
           if (response.ok) {
             const profile = await response.json();
             if (profile.interview_data) {
