@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { apiConfig } from '../config';
 import logoImage from '../assets/logo.png';
+import InterviewReview from './InterviewReview';
 
 const ChatInterview = ({ userData, onComplete }) => {
   const { accounts } = useMsal();
@@ -13,6 +14,8 @@ const ChatInterview = ({ userData, onComplete }) => {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [interviewComplete, setInterviewComplete] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const [finalInterviewData, setFinalInterviewData] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -249,18 +252,31 @@ const ChatInterview = ({ userData, onComplete }) => {
     if (interviewComplete) {
       const interviewData = {
         responses: conversationHistory,
+        raw_responses: conversationHistory, // Add this for the review component
         completedAt: new Date(),
         finalSummary: messages[messages.length - 1]?.content || ''
       };
 
       try {
         await saveInterviewData(interviewData);
-        onComplete(interviewData);
+        setFinalInterviewData(interviewData);
+        setShowReview(true); // Show review instead of completing immediately
       } catch (error) {
         console.error('Error saving interview data:', error);
-        onComplete(interviewData);
+        setFinalInterviewData(interviewData);
+        setShowReview(true); // Still show review even if save failed
       }
     }
+  };
+
+  const handleReviewComplete = (reviewedData) => {
+    // User has reviewed and potentially edited their responses
+    onComplete(reviewedData);
+  };
+
+  const handleBackToChat = () => {
+    setShowReview(false);
+    setInterviewComplete(false); // Allow them to continue the chat if needed
   };
 
   // Map frontend life areas to backend enum values
@@ -770,6 +786,21 @@ const ChatInterview = ({ userData, onComplete }) => {
     return html;
   };
 
+  // Show review screen if interview is complete and review is requested
+  if (showReview && finalInterviewData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-violet-100">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <InterviewReview 
+            interviewData={finalInterviewData}
+            onComplete={handleReviewComplete}
+            onBack={handleBackToChat}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-6">
@@ -935,7 +966,7 @@ const ChatInterview = ({ userData, onComplete }) => {
               onClick={handleContinue}
               className="btn-primary px-8 py-3 text-lg font-semibold"
             >
-              Continue to Next Step
+              Review My Responses
             </button>
           </div>
         )}

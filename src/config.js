@@ -1,11 +1,3 @@
-// Debug environment variables
-console.log('Environment Check:', {
-  VITE_REDIRECT_URI: import.meta.env.VITE_REDIRECT_URI,
-  VITE_AZURE_CLIENT_ID: import.meta.env.VITE_AZURE_CLIENT_ID ? 'Set' : 'Missing',
-  windowOrigin: window.location.origin,
-  finalRedirectUri: import.meta.env.VITE_REDIRECT_URI || window.location.origin
-});
-
 // MSAL configuration - supports both personal and work/school accounts
 export const msalConfig = {
   auth: {

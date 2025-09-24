@@ -29,6 +29,12 @@ const CompletePage = ({ userData }) => {
   }, [accounts]);
 
   const parseInterviewInsights = (interviewData) => {
+    // If we have categorized items from the review screen, use those
+    if (interviewData.categorized_items) {
+      return interviewData.categorized_items;
+    }
+    
+    // Otherwise, fall back to parsing raw responses
     if (!interviewData.raw_responses) return null;
 
     const insights = {
