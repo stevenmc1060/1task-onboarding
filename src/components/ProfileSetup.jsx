@@ -14,16 +14,78 @@ const ProfileSetup = ({ onComplete }) => {
     role: '',
     accountType: 'free',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    notifications: true
+    notifications: true,
+    // Contact/Shipping Address
+    contactAddress: {
+      street: '',
+      street2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'US'
+    },
+    // Billing Address
+    billingAddress: {
+      street: '',
+      street2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'US'
+    },
+    billingAddressSameAsContact: true
   });
   
   const [selectedPlan, setSelectedPlan] = useState('free');
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    // Handle nested address fields
+    if (name.includes('.')) {
+      const [section, field] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      }));
+      return;
+    }
+    
+    // Handle billing address same as contact checkbox
+    if (name === 'billingAddressSameAsContact') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked,
+        // Copy contact address to billing address when checked
+        billingAddress: checked ? { ...prev.contactAddress } : prev.billingAddress
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+  
+  // Update billing address when contact address changes (if they're the same)
+  const handleContactAddressChange = (e) => {
+    const { name, value } = e.target;
+    const field = name.split('.')[1];
+    
+    setFormData(prev => ({
+      ...prev,
+      contactAddress: {
+        ...prev.contactAddress,
+        [field]: value
+      },
+      // Also update billing address if they're set to be the same
+      billingAddress: prev.billingAddressSameAsContact 
+        ? { ...prev.contactAddress, [field]: value }
+        : prev.billingAddress
     }));
   };
 
@@ -260,6 +322,230 @@ const ProfileSetup = ({ onComplete }) => {
               </select>
             </div>
           </div>
+        </div>
+
+        {/* Contact/Shipping Address */}
+        <div className="card">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Address</h2>
+          <p className="text-sm text-gray-600 mb-4">This will be used as your primary contact and shipping address.</p>
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="form-label">Street Address</label>
+              <input
+                type="text"
+                name="contactAddress.street"
+                value={formData.contactAddress.street}
+                onChange={handleContactAddressChange}
+                className="form-input"
+                placeholder="123 Main Street"
+                required
+              />
+            </div>
+            <div>
+              <label className="form-label">Street Address Line 2 (Optional)</label>
+              <input
+                type="text"
+                name="contactAddress.street2"
+                value={formData.contactAddress.street2}
+                onChange={handleContactAddressChange}
+                className="form-input"
+                placeholder="Apartment, suite, unit, building, floor, etc."
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="form-label">City</label>
+                <input
+                  type="text"
+                  name="contactAddress.city"
+                  value={formData.contactAddress.city}
+                  onChange={handleContactAddressChange}
+                  className="form-input"
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-label">State/Province</label>
+                <input
+                  type="text"
+                  name="contactAddress.state"
+                  value={formData.contactAddress.state}
+                  onChange={handleContactAddressChange}
+                  className="form-input"
+                  placeholder="CA, NY, Ontario, etc."
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-label">ZIP/Postal Code</label>
+                <input
+                  type="text"
+                  name="contactAddress.postalCode"
+                  value={formData.contactAddress.postalCode}
+                  onChange={handleContactAddressChange}
+                  className="form-input"
+                  placeholder="12345 or A1B 2C3"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="form-label">Country</label>
+              <select
+                name="contactAddress.country"
+                value={formData.contactAddress.country}
+                onChange={handleContactAddressChange}
+                className="form-input"
+                required
+              >
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+                <option value="GB">United Kingdom</option>
+                <option value="AU">Australia</option>
+                <option value="DE">Germany</option>
+                <option value="FR">France</option>
+                <option value="JP">Japan</option>
+                <option value="BR">Brazil</option>
+                <option value="MX">Mexico</option>
+                <option value="IN">India</option>
+                <option value="CN">China</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Billing Address */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Billing Address</h2>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="billingAddressSameAsContact"
+                id="billingAddressSameAsContact"
+                checked={formData.billingAddressSameAsContact}
+                onChange={handleInputChange}
+                className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+              />
+              <label htmlFor="billingAddressSameAsContact" className="ml-2 text-sm text-gray-700">
+                Billing address is the same as contact address
+              </label>
+            </div>
+          </div>
+          
+          {!formData.billingAddressSameAsContact && (
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="form-label">Street Address</label>
+                <input
+                  type="text"
+                  name="billingAddress.street"
+                  value={formData.billingAddress.street}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="123 Main Street"
+                  required
+                />
+              </div>
+              <div>
+                <label className="form-label">Street Address Line 2 (Optional)</label>
+                <input
+                  type="text"
+                  name="billingAddress.street2"
+                  value={formData.billingAddress.street2}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="Apartment, suite, unit, building, floor, etc."
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="form-label">City</label>
+                  <input
+                    type="text"
+                    name="billingAddress.city"
+                    value={formData.billingAddress.city}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">State/Province</label>
+                  <input
+                    type="text"
+                    name="billingAddress.state"
+                    value={formData.billingAddress.state}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    placeholder="CA, NY, Ontario, etc."
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">ZIP/Postal Code</label>
+                  <input
+                    type="text"
+                    name="billingAddress.postalCode"
+                    value={formData.billingAddress.postalCode}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    placeholder="12345 or A1B 2C3"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="form-label">Country</label>
+                <select
+                  name="billingAddress.country"
+                  value={formData.billingAddress.country}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  required
+                >
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="GB">United Kingdom</option>
+                  <option value="AU">Australia</option>
+                  <option value="DE">Germany</option>
+                  <option value="FR">France</option>
+                  <option value="JP">Japan</option>
+                  <option value="BR">Brazil</option>
+                  <option value="MX">Mexico</option>
+                  <option value="IN">India</option>
+                  <option value="CN">China</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+            </div>
+          )}
+          
+          {formData.billingAddressSameAsContact && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>Billing address will be:</strong>
+              </p>
+              <div className="text-sm text-gray-800">
+                {formData.contactAddress.street && (
+                  <>
+                    <div>{formData.contactAddress.street}</div>
+                    {formData.contactAddress.street2 && <div>{formData.contactAddress.street2}</div>}
+                    <div>
+                      {formData.contactAddress.city}
+                      {formData.contactAddress.city && formData.contactAddress.state && ', '}
+                      {formData.contactAddress.state} {formData.contactAddress.postalCode}
+                    </div>
+                    <div>{formData.contactAddress.country}</div>
+                  </>
+                )}
+                {!formData.contactAddress.street && (
+                  <div className="text-gray-500">Fill in contact address above to see billing address preview</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Account Type Selection */}
