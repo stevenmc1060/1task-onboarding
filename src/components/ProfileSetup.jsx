@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { accountTypes, apiConfig } from '../config';
 import logoImage from '../assets/logo.png';
+// Uncomment this import to use mock API for testing
+// import { mockValidatePreviewCode } from '../utils/mockPreviewCodes';
 
 const ProfileSetup = ({ onComplete }) => {
   const { accounts, instance } = useMsal();
@@ -15,6 +17,7 @@ const ProfileSetup = ({ onComplete }) => {
     accountType: 'free',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     notifications: true,
+    previewCode: '', // Preview code for early access
     // Contact/Shipping Address
     contactAddress: {
       street: '',
@@ -37,6 +40,13 @@ const ProfileSetup = ({ onComplete }) => {
   });
   
   const [selectedPlan, setSelectedPlan] = useState('free');
+  const [codeValidation, setCodeValidation] = useState({
+    isValidating: false,
+    isValid: false,
+    error: '',
+    hasValidated: false
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -94,9 +104,131 @@ const ProfileSetup = ({ onComplete }) => {
     setFormData(prev => ({ ...prev, accountType: planId }));
   };
 
-  const handleSubmit = (e) => {
+  // Validate preview code with backend
+  const validatePreviewCode = async (code) => {
+    if (!code || code.trim().length === 0) {
+      setCodeValidation({
+        isValidating: false,
+        isValid: false,
+        error: 'Preview code is required',
+        hasValidated: true
+      });
+      return false;
+    }
+
+    setCodeValidation({
+      isValidating: true,
+      isValid: false,
+      error: '',
+      hasValidated: false
+    });
+
+    try {
+      // Use mock API for testing (set USE_MOCK_API = true in development)
+      const USE_MOCK_API = process.env.NODE_ENV === 'development' && false; // Change to true to use mock
+      
+      let result;
+      if (USE_MOCK_API) {
+        // Mock API call - uncomment mockValidatePreviewCode import to use
+        // result = await mockValidatePreviewCode(code.trim(), account?.localAccountId);
+        console.log('Mock API disabled - using real backend');
+        throw new Error('Mock API is disabled');
+      } else {
+        // Real API call
+        const response = await fetch(`${apiConfig.backendUrl}/preview-codes/validate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: code.trim(),
+            userId: account?.localAccountId
+          })
+        });
+
+        result = await response.json();
+        
+        // Check if response was successful
+        if (!response.ok) {
+          throw new Error(result.message || 'Server error');
+        }
+      }
+
+      if (result.valid) {
+        setCodeValidation({
+          isValidating: false,
+          isValid: true,
+          error: '',
+          hasValidated: true
+        });
+        return true;
+      } else {
+        setCodeValidation({
+          isValidating: false,
+          isValid: false,
+          error: result.message || 'Invalid preview code. Please check your code and try again.',
+          hasValidated: true
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Preview code validation error:', error);
+      setCodeValidation({
+        isValidating: false,
+        isValid: false,
+        error: 'Unable to validate preview code. Please check your internet connection and try again.',
+        hasValidated: true
+      });
+      return false;
+    }
+  };
+
+  // Handle preview code input with debounced validation
+  const handlePreviewCodeChange = (e) => {
+    const code = e.target.value;
+    setFormData(prev => ({ ...prev, previewCode: code }));
+    
+    // Reset validation state when user starts typing
+    setCodeValidation(prev => ({
+      ...prev,
+      isValid: false,
+      error: '',
+      hasValidated: false
+    }));
+  };
+
+  // Validate code when user finishes typing (on blur)
+  const handlePreviewCodeBlur = () => {
+    if (formData.previewCode) {
+      validatePreviewCode(formData.previewCode);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onComplete(formData);
+    
+    // Validate preview code before submission
+    if (!codeValidation.isValid) {
+      const isCodeValid = await validatePreviewCode(formData.previewCode);
+      if (!isCodeValid) {
+        return; // Stop submission if code is invalid
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Include preview code in the submission data
+      const submissionData = {
+        ...formData,
+        previewCodeUsed: formData.previewCode
+      };
+      onComplete(submissionData);
+    } catch (error) {
+      console.error('Profile submission error:', error);
+      alert('Failed to submit profile. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -321,6 +453,61 @@ const ProfileSetup = ({ onComplete }) => {
                 <option value="other">Other</option>
               </select>
             </div>
+          </div>
+        </div>
+
+        {/* Preview Code Section */}
+        <div className="card border-l-4 border-l-primary-500">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Early Access Code</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            OneTaskAssistant is currently in early access. Please enter your preview code to continue.
+          </p>
+          <div className="max-w-md">
+            <label className="form-label">Preview Code *</label>
+            <div className="relative">
+              <input
+                type="text"
+                name="previewCode"
+                value={formData.previewCode}
+                onChange={handlePreviewCodeChange}
+                onBlur={handlePreviewCodeBlur}
+                className={`form-input pr-10 ${
+                  codeValidation.hasValidated
+                    ? codeValidation.isValid 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-red-500 bg-red-50'
+                    : ''
+                }`}
+                placeholder="Enter your preview code"
+                required
+                disabled={codeValidation.isValidating}
+              />
+              {codeValidation.isValidating && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                </div>
+              )}
+              {codeValidation.hasValidated && codeValidation.isValid && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <svg className="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+              {codeValidation.hasValidated && !codeValidation.isValid && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            {codeValidation.error && (
+              <p className="mt-2 text-sm text-red-600">{codeValidation.error}</p>
+            )}
+            {codeValidation.isValid && (
+              <p className="mt-2 text-sm text-green-600">✓ Preview code verified! You can continue with setup.</p>
+            )}
           </div>
         </div>
 
@@ -630,9 +817,26 @@ const ProfileSetup = ({ onComplete }) => {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="btn-primary px-8 py-3 text-lg font-medium"
+            disabled={isSubmitting || codeValidation.isValidating || (formData.previewCode && !codeValidation.isValid)}
+            className={`px-8 py-3 text-lg font-medium rounded-md transition-colors ${
+              isSubmitting || codeValidation.isValidating || (formData.previewCode && !codeValidation.isValid)
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-primary-600 text-white hover:bg-primary-700'
+            }`}
           >
-            Continue to Agreement
+            {isSubmitting ? (
+              <span className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Setting up profile...
+              </span>
+            ) : codeValidation.isValidating ? (
+              <span className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
+                Validating code...
+              </span>
+            ) : (
+              'Continue to Agreement'
+            )}
           </button>
         </div>
       </form>
