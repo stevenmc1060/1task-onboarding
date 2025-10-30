@@ -3,7 +3,7 @@ import { useMsal } from '@azure/msal-react';
 import { accountTypes, apiConfig } from '../config';
 import logoImage from '../assets/logo.png';
 // Uncomment this import to use mock API for testing
-// import { mockValidatePreviewCode } from '../utils/mockPreviewCodes';
+import { mockValidatePreviewCode } from '../utils/mockPreviewCodes';
 
 const ProfileSetup = ({ onComplete }) => {
   const { accounts, instance } = useMsal();
@@ -125,14 +125,13 @@ const ProfileSetup = ({ onComplete }) => {
 
     try {
       // Use mock API for testing (set USE_MOCK_API = true in development)
-      const USE_MOCK_API = process.env.NODE_ENV === 'development' && false; // Change to true to use mock
+      const USE_MOCK_API = process.env.NODE_ENV === 'development' && true; // Change to true to use mock
       
       let result;
       if (USE_MOCK_API) {
-        // Mock API call - uncomment mockValidatePreviewCode import to use
-        // result = await mockValidatePreviewCode(code.trim(), account?.localAccountId);
-        console.log('Mock API disabled - using real backend');
-        throw new Error('Mock API is disabled');
+        // Mock API call - using mock for development testing
+        console.log('Using Mock API for testing');
+        result = await mockValidatePreviewCode(code.trim(), account?.localAccountId);
       } else {
         // Real API call
         const response = await fetch(`${apiConfig.backendUrl}/preview-codes/validate`, {
@@ -142,7 +141,7 @@ const ProfileSetup = ({ onComplete }) => {
           },
           body: JSON.stringify({
             code: code.trim(),
-            userId: account?.localAccountId
+            user_id: account?.localAccountId
           })
         });
 

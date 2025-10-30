@@ -30,7 +30,13 @@
 
 ### Test Scenarios:
 
-**Valid Codes (should work):**
+**Multi-Use Test Codes (unlimited testing):**
+- `DEVTEST` ✨
+- `MULTIUSE` ✨  
+- `REUSABLE` ✨
+- `TESTING123` ✨
+
+**Valid One-Time Codes (single use):**
 - `WSHA61P9`
 - `TESTCODE`  
 - `DEMO1234`
@@ -42,10 +48,13 @@
 - `WRONG`
 
 **Test Flow:**
-1. Enter a valid code → Should show green checkmark
-2. Try to use the same code again → Should show "already used" error
-3. Enter an invalid code → Should show "invalid code" error
-4. Leave field empty → Should show "required" error
+1. **For repeated testing:** Use `DEVTEST` or any multi-use code → Always works ✨
+2. **For one-time testing:** Enter a valid code → Should show green checkmark
+3. Try to use the same one-time code again → Should show "already used" error
+4. Enter an invalid code → Should show "invalid code" error
+5. Leave field empty → Should show "required" error
+
+**💡 Pro Tip:** Use `DEVTEST` for repeated onboarding flow testing!
 
 ### Reset Test State:
 Open browser console and run:

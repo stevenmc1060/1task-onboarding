@@ -8,8 +8,8 @@ import { msalConfig, apiConfig } from './config';
 import SignUpPage from './components/SignUpPage';
 import ProfileSetup from './components/ProfileSetup';
 import UsageAgreement from './components/UsageAgreement';
-import ChatInterview from './components/ChatInterview';
 import CompletePage from './components/CompletePage';
+import AdminPanel from './components/AdminPanel';
 
 // Import dev tools (adds console functions)
 import './utils/devTools.js';
@@ -81,8 +81,8 @@ function AppContent() {
       setUserData(prevData => ({ ...prevData, ...data }));
     }
     
-    // Move to next step
-    const steps = ['signup', 'profile', 'agreement', 'interview', 'complete'];
+    // Move to next step (removed 'interview' step)
+    const steps = ['signup', 'profile', 'agreement', 'complete'];
     const currentIndex = steps.indexOf(step);
     if (currentIndex < steps.length - 1) {
       setOnboardingStep(steps[currentIndex + 1]);
@@ -226,11 +226,6 @@ function AppContent() {
         return <ProfileSetup onComplete={(data) => handleStepComplete('profile', data)} />;
       case 'agreement':
         return <UsageAgreement onComplete={() => handleStepComplete('agreement')} />;
-      case 'interview':
-        return <ChatInterview 
-          userData={userData} 
-          onComplete={(data) => handleStepComplete('interview', data)} 
-        />;
       case 'complete':
         return <CompletePage userData={userData} />;
       default:
@@ -243,6 +238,11 @@ function AppContent() {
       <div className="min-h-screen bg-gray-50">
         <Routes>
           <Route path="/auth/callback" element={<Navigate to="/" replace />} />
+          <Route path="/admin" element={
+            <div className="max-w-6xl mx-auto py-8 px-4">
+              <AdminPanel />
+            </div>
+          } />
           <Route path="/*" element={
             <div className="max-w-4xl mx-auto py-8 px-4">
               {renderStep()}
